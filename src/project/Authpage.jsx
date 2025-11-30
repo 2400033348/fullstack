@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+// ❌ axios removed – no backend now
 import "./style.css";
 import prot from "./prot.png";
 
@@ -26,9 +26,6 @@ export default function AuthPage() {
   const [captcha, setCaptcha] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
 
-  // Backend URL (use same port shown in terminal)
-  const API_BASE_URL = "http://localhost:5000/api";
-
   // ✅ Check that email ends with @gmail.com
   const isValidGmail = (value) => {
     return value.toLowerCase().endsWith("@gmail.com");
@@ -53,9 +50,9 @@ export default function AuthPage() {
   }, [view]);
 
   // ==================================================
-  // 🔹 REGISTER FUNCTION (Saves to MongoDB)
+  // 🔹 REGISTER FUNCTION (Saves to LOCAL STORAGE)
   // ==================================================
-  const handleRegister = async () => {
+  const handleRegister = () => {
     if (!fullName || !email || !password || !confirmPassword) {
       alert("⚠ Please fill all fields!");
       return;
@@ -72,43 +69,44 @@ export default function AuthPage() {
       return;
     }
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/signup`, {
-        username: fullName,
-        email,
-        password,
-        role,
-      });
+    // 🔹 Get existing users from localStorage
+    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
 
-      console.log("✅ Registration success:", response.data);
-      alert("✅ Registration successful! You can now log in.");
-
-      // Reset fields
-      setFullName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setRole("student");
-
-      setView("login");
-    } catch (error) {
-      if (error.response) {
-        console.error("❌ Registration error:", error.response.data);
-        alert(`❌ ${error.response.data.message || "Registration failed!"}`);
-      } else if (error.request) {
-        console.error("❌ No response from server:", error.request);
-        alert("❌ Cannot connect to backend. Check if server is running!");
-      } else {
-        console.error("❌ Error during registration:", error.message);
-        alert("❌ Something went wrong. Try again.");
-      }
+    // 🔹 Check if email already exists
+    const userExists = existingUsers.some((u) => u.email === email);
+    if (userExists) {
+      alert("⚠ User with this email already exists!");
+      return;
     }
+
+    // 🔹 Create new user object
+    const newUser = {
+      fullName,
+      email,
+      password,
+      role,
+    };
+
+    // 🔹 Save back to localStorage
+    const updatedUsers = [...existingUsers, newUser];
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
+
+    alert("✅ Registration successful! You can now log in.");
+
+    // Reset fields
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setRole("student");
+
+    setView("login");
   };
 
   // ==================================================
-  // 🔹 LOGIN FUNCTION (Verifies from backend)
+  // 🔹 LOGIN FUNCTION (Verifies from LOCAL STORAGE)
   // ==================================================
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!loginEmail || !loginPassword) {
       alert("⚠ Please fill all fields!");
       return;
@@ -120,7 +118,7 @@ export default function AuthPage() {
       return;
     }
 
-    // ✅ Check captcha before calling backend
+    // ✅ Check captcha before login
     if (!captchaInput) {
       alert("⚠ Please enter the captcha!");
       return;
@@ -133,36 +131,31 @@ export default function AuthPage() {
       return;
     }
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
-        email: loginEmail,
-        password: loginPassword,
-      });
+    // 🔹 Read users from localStorage
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
 
-      const user = response.data.user;
+    const foundUser = users.find(
+      (u) => u.email === loginEmail && u.password === loginPassword
+    );
 
-      // Save logged in user
-      localStorage.setItem("currentUser", JSON.stringify(user));
-
-      // 🕒 Save session expiry time
-      const expiryTime = Date.now() + SESSION_DURATION;
-      localStorage.setItem("sessionExpiry", expiryTime.toString());
-
-      alert("✅ Login successful!");
-
-      if (user.role === "admin") navigate("/admin");
-      else navigate("/student");
-    } catch (error) {
-      if (error.response) {
-        alert(`❌ ${error.response.data.message || "Invalid credentials!"}`);
-      } else {
-        alert("❌ Unable to connect to backend!");
-      }
-      console.error("❌ Login failed:", error);
+    if (!foundUser) {
+      alert("❌ Invalid email or password!");
+      return;
     }
+
+    // Save logged-in user
+    localStorage.setItem("currentUser", JSON.stringify(foundUser));
+
+    // 🕒 Save session expiry time
+    const expiryTime = Date.now() + SESSION_DURATION;
+    localStorage.setItem("sessionExpiry", expiryTime.toString());
+
+    alert("✅ Login successful!");
+
+    if (foundUser.role === "admin") navigate("/admin");
+    else navigate("/student");
   };
 
-  
   return (
     <div className="auth-page">
       {/* =============================== */}
