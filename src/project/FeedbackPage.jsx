@@ -1,6 +1,3 @@
-// ===============================================================
-// 🗒️ FeedbackPage.jsx — Student Feedback + Progress Tracker
-// ===============================================================
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +26,12 @@ export default function FeedbackPage() {
     navigate("/");
   };
 
-  // 📈 Convert marks to progress percentage
+  
+  const handleBackToHome = () => {
+    navigate("/student"); // student home route
+  };
+
+ 
   const getProgress = (marks) => {
     if (marks === null || marks === undefined) return 20;
     if (marks >= 90) return 100;
@@ -40,7 +42,8 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="student-layout">
+   
+    <div id="feedback-layout" className="student-layout feedback-page">
       {/* Sidebar */}
       <aside className="sidebar">
         <h2 className="sidebar-title">📘 Menu</h2>
@@ -55,6 +58,11 @@ export default function FeedbackPage() {
 
       {/* Main Feedback Section */}
       <main className="content">
+        {/* 🔙 Back Button */}
+        <button className="back-btn" onClick={handleBackToHome}>
+          ⬅ Back to Home
+        </button>
+
         <h2>📊 Feedback & Progress Tracker</h2>
         <p>View your project evaluations, remarks, and performance progress.</p>
 

@@ -1,6 +1,3 @@
-// ===============================================================
-// 👨‍🎓 StudentDashboard.jsx — Dashboard with Sidebar Navigation
-// ===============================================================
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,29 +14,46 @@ export default function StudentDashboard() {
   const [admins, setAdmins] = useState([]);
   const [myProjects, setMyProjects] = useState([]);
 
-  // ✅ Load user + admins + projects
+  const [modal, setModal] = useState({
+    show: false,
+    message: "",
+  });
+
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (!currentUser || currentUser.role !== "student") {
-      navigate("/");
-      return;
-    }
+    const checkSessionAndLoad = () => {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      const sessionExpiry = localStorage.getItem("sessionExpiry");
 
-    // ✅ Fetch admins from MongoDB
-    axios
-      .get("http://localhost:5000/api/admins")
-      .then((response) => setAdmins(response.data))
-      .catch((error) => console.error("❌ Failed to fetch admins:", error));
+      if (
+        !currentUser ||
+        currentUser.role !== "student" ||
+        !sessionExpiry ||
+        Date.now() > Number(sessionExpiry)
+      ) {
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("sessionExpiry");
+        alert("Session expired. Please login again.");
+        navigate("/");
+        return;
+      }
 
-    // Load projects from localStorage
-    const allProjects = JSON.parse(localStorage.getItem("projects") || "[]");
-    const myData = allProjects.filter(
-      (p) => p.studentEmail === currentUser.email
-    );
-    setMyProjects(myData);
+      axios
+        .get("http://localhost:5000/api/admins")
+        .then((response) => setAdmins(response.data))
+        .catch((error) => console.error("❌ Failed to fetch admins:", error));
+
+      const allProjects = JSON.parse(localStorage.getItem("projects") || "[]");
+      const myData = allProjects.filter(
+        (p) => p.studentEmail === currentUser.email
+      );
+      setMyProjects(myData);
+    };
+
+    checkSessionAndLoad();
+    const intervalId = setInterval(checkSessionAndLoad, 60 * 1000);
+    return () => clearInterval(intervalId);
   }, [navigate]);
 
-  // ✅ Submit project
   const handleSubmit = () => {
     if (!projectTitle || !projectDesc || !file || !assignedAdmin) {
       alert("⚠ Please fill all fields and select a madam!");
@@ -73,15 +87,85 @@ export default function StudentDashboard() {
     setMyProjects([...myProjects, newProject]);
   };
 
-  // ✅ Logout
+  const handleDelete = (index) => {
+    const ok = window.confirm("Are you sure you want to delete this project? ❌");
+    if (!ok) return;
+
+    const projectToDelete = myProjects[index];
+
+    let allProjects = JSON.parse(localStorage.getItem("projects") || "[]");
+    allProjects = allProjects.filter(
+      (p) =>
+        !(
+          p.title === projectToDelete.title &&
+          p.studentEmail === projectToDelete.studentEmail
+        )
+    );
+
+    localStorage.setItem("projects", JSON.stringify(allProjects));
+    setMyProjects(myProjects.filter((_, i) => i !== index));
+
+    setModal({
+      show: true,
+      message: "🗑️ Project deleted successfully!",
+    });
+  };
+
+  const handleUpdateFile = (index) => {
+    const ok = window.confirm("Do you want to update this file? 🔄");
+    if (!ok) return;
+
+    const fileInput = document.getElementById(`updateFile_${index}`);
+    if (!fileInput || !fileInput.files.length) {
+      alert("⚠ Please choose a file to update.");
+      return;
+    }
+
+    const newFile = fileInput.files[0];
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const allProjects = JSON.parse(localStorage.getItem("projects") || "[]");
+    const project = myProjects[index];
+
+    const projectIndex = allProjects.findIndex(
+      (p) =>
+        p.title === project.title && p.studentEmail === project.studentEmail
+    );
+
+    if (projectIndex === -1) {
+      alert("❌ Could not find project to update.");
+      return;
+    }
+
+    const newFileURL = URL.createObjectURL(newFile);
+    allProjects[projectIndex].fileName = newFile.name;
+    allProjects[projectIndex].fileURL = newFileURL;
+
+    localStorage.setItem("projects", JSON.stringify(allProjects));
+
+    const updatedProjects = [...myProjects];
+    updatedProjects[index] = {
+      ...updatedProjects[index],
+      fileName: newFile.name,
+      fileURL: newFileURL,
+    };
+    setMyProjects(updatedProjects);
+
+    fileInput.value = "";
+
+    setModal({
+      show: true,
+      message: "✅ File updated successfully!",
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("sessionExpiry");
     navigate("/");
   };
 
   return (
     <div className="student-layout">
-      {/* ================= SIDEBAR ================= */}
       <aside className="sidebar">
         <h2 className="sidebar-title">📘 Menu</h2>
         <nav>
@@ -155,6 +239,28 @@ export default function StudentDashboard() {
                   Open Project
                 </a>
 
+                <div style={{ marginTop: "10px" }}>
+                  <label>Update File</label>
+                  <input
+                    id={`updateFile_${i}`}
+                    type="file"
+                    style={{ display: "block", marginBottom: "6px" }}
+                  />
+                  <button
+                    onClick={() => handleUpdateFile(i)}
+                    className="btn-outline"
+                    style={{ marginRight: "8px" }}
+                  >
+                    🔄 Update File
+                  </button>
+                  <button
+                    onClick={() => handleDelete(i)}
+                    className="logout"
+                  >
+                    🗑️ Delete Project
+                  </button>
+                </div>
+
                 {p.feedback ? (
                   <>
                     <p>
@@ -173,7 +279,31 @@ export default function StudentDashboard() {
             ))
           )}
         </div>
+
+        {modal.show && (
+          <div className="modal-overlay">
+            <div className="modal-box">
+              <p>{modal.message}</p>
+              <div className="btn-row">
+                <button
+                  className="confirm-btn"
+                  onClick={() => setModal({ ...modal, show: false })}
+                >
+                  OK
+                </button>
+                <button
+                  className="cancel-btn"
+                  onClick={() => setModal({ ...modal, show: false })}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
 }
+
+

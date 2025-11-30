@@ -1,37 +1,35 @@
-/* ===================================================
-   🌐 SIDEBAR LAYOUT STYLES
-   =================================================== */
+
 .student-layout {
+  position: fixed;        
+  inset: 0;               
   display: flex;
-  min-height: 100vh;
   background-color: #0e1421;
   color: white;
   font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
 }
 
-/* Make full screen background consistent */
+
 body,
 html {
-  background-color: #0e1421; /* deep navy blue background */
+  background-color: #0e1421;
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
 }
 
-/* ================= SIDEBAR ================= */
 .sidebar {
   width: 230px;
+  min-width: 230px;
   background-color: #10182a;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   padding: 20px;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
-  position: fixed;
   height: 100%;
-  top: 0;
-  left: 0;
+  box-sizing: border-box;
 }
 
 .sidebar-title {
@@ -73,13 +71,29 @@ html {
   color: white;
 }
 
-/* ================= MAIN CONTENT ================= */
+
+
 .content {
   flex: 1;
-  margin-left: 250px;
   padding: 40px;
-  background-color: #0e1421; /* ✅ Ensures right side has same color */
-  min-height: 100vh;
+  box-sizing: border-box;
+  background-color: #0e1421;
+  overflow-y: auto;      
+  overflow-x: hidden;
+}
+
+
+.content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #2b3753;
+  border-radius: 10px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #3e4b6d;
 }
 
 .card {
@@ -140,27 +154,28 @@ button:hover {
   background-color: #ef4444;
 }
 
-/* 📱 Responsive */
+
 @media (max-width: 768px) {
   .student-layout {
+    position: static;     
     flex-direction: column;
   }
+
   .sidebar {
-    position: relative;
+    position: static;
     width: 100%;
     height: auto;
     flex-direction: row;
     justify-content: space-around;
     box-shadow: none;
   }
+
   .content {
-    margin-left: 0;
+    padding: 20px;
   }
 }
 
-/* ===================================================
-   🧭 FEEDBACK PAGE STYLES
-   =================================================== */
+
 
 .progress-bar {
   width: 100%;
@@ -187,4 +202,86 @@ button:hover {
 .desc {
   color: #ccc;
   font-size: 0.95rem;
+}
+
+
+.back-btn {
+  margin-bottom: 16px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-box {
+  background-color: #182133;
+  padding: 25px 30px;
+  border-radius: 12px;
+  width: 330px;
+  max-width: 90%;
+  text-align: center;
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-box p {
+  font-size: 1rem;
+  color: #e5e7eb;
+  margin-bottom: 15px;
+}
+
+.btn-row {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.confirm-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: #1e40af;
+}
+
+.cancel-btn {
+  background-color: #6b7280;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #4b5563;
 }

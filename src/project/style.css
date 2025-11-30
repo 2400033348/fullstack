@@ -1,8 +1,4 @@
-/* ===================================================
-   🎨 STYLE.CSS — Perfectly Centered AuthPage
-   =================================================== */
 
-/* 🌍 Overall page setup */
 .auth-page {
   display: flex;
   justify-content: center;
@@ -15,7 +11,7 @@
   text-align: center;
 }
 
-/* 🏠 Splash screen container */
+
 .splash-container {
   display: flex;
   flex-direction: column;
@@ -23,7 +19,7 @@
   justify-content: center;
 }
 
-/* 🏷️ Title text */
+
 .splash-title {
   font-size: 2.5rem;
   font-weight: 700;
@@ -31,7 +27,7 @@
   letter-spacing: 1px;
 }
 
-/* 🧩 Logo */
+
 .logo-container {
   margin: 10px 0 25px 0;
 }
@@ -43,7 +39,7 @@
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
-/* 🔘 Login/Signup buttons */
+
 .button-group {
   display: flex;
   gap: 1rem;
@@ -65,7 +61,7 @@
   color: #141a27;
 }
 
-/* 🔐 Auth Box (Login & Signup form) */
+
 .auth-box {
   background-color: #1c2333;
   padding: 30px 40px;
@@ -78,7 +74,7 @@
   justify-content: center;
 }
 
-/* 🏷️ Input labels */
+
 label {
   margin: 10px 0 5px;
   font-size: 0.9rem;
@@ -86,7 +82,7 @@ label {
   align-self: flex-start;
 }
 
-/* ✏️ Inputs and dropdowns */
+
 input,
 select {
   padding: 10px;
@@ -103,7 +99,7 @@ input::placeholder {
   color: #bbb;
 }
 
-/* 🧩 Buttons inside forms */
+
 .auth-btn {
   background-color: #007bff;
   color: white;
@@ -120,7 +116,7 @@ input::placeholder {
   background-color: #005fcc;
 }
 
-/* 🧾 Switch between login/signup */
+
 .auth-switch {
   text-align: center;
   font-size: 0.9rem;
@@ -136,7 +132,7 @@ input::placeholder {
   text-decoration: underline;
 }
 
-/* 📱 Responsive tweaks */
+
 @media (max-width: 500px) {
   .auth-box {
     width: 90%;
@@ -152,21 +148,17 @@ input::placeholder {
   }
 }
 
-/* ===================================================
-   👩‍🏫 ADMIN PAGE LAYOUT + SCROLL FIX
-   =================================================== */
 
-/* Entire admin layout (with sidebar) */
 .student-layout {
   display: flex;
   min-height: 100vh;
   background-color: #0e1421;
   color: white;
   font-family: "Poppins", sans-serif;
-  overflow-y: auto; /* ✅ Allows page scrolling */
+  overflow-y: auto; 
 }
 
-/* Sidebar stays fixed */
+
 .sidebar {
   width: 230px;
   background-color: #10182a;
@@ -181,7 +173,7 @@ input::placeholder {
   top: 0;
 }
 
-/* Sidebar title and buttons */
+
 .sidebar-title {
   font-size: 1.3rem;
   font-weight: 600;
@@ -221,15 +213,18 @@ input::placeholder {
   color: white;
 }
 
-/* Main content area */
+
 .content {
   flex: 1;
-  margin-left: 250px; /* ✅ Leave space for sidebar */
+  margin-left: 250px;
   padding: 40px;
   box-sizing: border-box;
-  overflow-y: auto; /* ✅ Scroll content if large */
+  background-color: #0e1421; 
   max-height: 100vh;
+  height: auto;      
+  overflow-y: visible; 
 }
+
 
 .card {
   background-color: #161d2f;
@@ -267,7 +262,7 @@ input::placeholder {
   margin-top: 10px;
 }
 
-/* Scrollbar Styling */
+
 .content::-webkit-scrollbar {
   width: 10px;
 }
@@ -279,4 +274,26 @@ input::placeholder {
 
 .content::-webkit-scrollbar-thumb:hover {
   background: #3e4b6d;
+}
+.captcha-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px 0;
+}
+
+.captcha-text {
+  padding: 6px 12px;
+  letter-spacing: 4px;
+  font-weight: 600;
+  border: 1px dashed #555;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.captcha-refresh {
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
 }
