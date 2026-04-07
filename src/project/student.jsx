@@ -6,12 +6,13 @@ import {
   deleteProject,
   getAdmins,
   getStudentProjects,
+  resolveAssetUrl,
   updateProjectFile,
 } from "../api";
 
 const normalizeProject = (project) => ({
   ...project,
-  fileUrl: project.fileUrl || project.fileURL || "",
+  fileUrl: resolveAssetUrl(project.fileUrl || project.fileURL || ""),
   fileName: project.fileName || project.filename || "Uploaded file",
   status: (project.status || "pending").toLowerCase(),
   marks:

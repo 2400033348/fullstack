@@ -1,4 +1,12 @@
 const BASE_URL = "https://backend-production-0919.up.railway.app/api";
+const API_ORIGIN = BASE_URL.replace(/\/api$/, "");
+
+export const resolveAssetUrl = (url) => {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/")) return `${API_ORIGIN}${url}`;
+  return `${API_ORIGIN}/${url}`;
+};
 
 const parseJsonResponse = async (response) => {
   const data = await response.json().catch(() => ({}));

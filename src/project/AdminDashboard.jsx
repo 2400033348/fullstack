@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./admin.css";
-import { getAdminProjects, updateProjectReview } from "../api";
+import { getAdminProjects, resolveAssetUrl, updateProjectReview } from "../api";
 
 const normalizeProject = (project) => ({
   ...project,
-  fileUrl: project.fileUrl || project.fileURL || "",
+  fileUrl: resolveAssetUrl(project.fileUrl || project.fileURL || ""),
   fileName: project.fileName || project.filename || "Uploaded file",
   status: (project.status || "pending").toLowerCase(),
   marks:
