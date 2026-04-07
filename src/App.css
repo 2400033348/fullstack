@@ -224,7 +224,7 @@ input::placeholder {
 /* Main content area */
 .content {
   flex: 1;
-  margin-left: 250px; /* ✅ Leave space for sidebar */
+   /* ✅ Leave space for sidebar */
   padding: 40px;
   box-sizing: border-box;
   overflow-y: auto; /* ✅ Scroll content if large */

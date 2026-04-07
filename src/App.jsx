@@ -1,21 +1,19 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthPage from "./project/Authpage";
+import AdminDashboard from "./project/AdminDashboard";
 import StudentDashboard from "./project/student";
-import AdminDashboard from "./project/admin";
-import FeedbackPage from "./project/FeedbackPage"; // 👈 fixed
+import FeedbackPage from "./project/FeedbackPage";
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<AuthPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/student" element={<StudentDashboard />} />
         <Route path="/feedback" element={<FeedbackPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

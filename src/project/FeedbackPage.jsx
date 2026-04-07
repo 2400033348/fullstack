@@ -1,37 +1,61 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./student.css";
+import { getStudentProjects } from "../api";
+
+const normalizeProject = (project) => ({
+  ...project,
+  status: (project.status || "pending").toLowerCase(),
+  marks:
+    project.marks === undefined || project.marks === null || project.marks === ""
+      ? null
+      : Number(project.marks),
+});
 
 export default function FeedbackPage() {
   const navigate = useNavigate();
+  const [studentName, setStudentName] = useState("Student");
   const [feedbackList, setFeedbackList] = useState([]);
 
+  const getDisplayName = (user) => {
+    if (!user) return "Student";
+    if (user.name && user.name.trim() !== "") return user.name;
+    if (user.email) {
+      const beforeAt = user.email.split("@")[0];
+      return beforeAt.charAt(0).toUpperCase() + beforeAt.slice(1);
+    }
+    return "Student";
+  };
+
+  const loadFeedback = async (email) => {
+    try {
+      const data = await getStudentProjects(email);
+      setFeedbackList(Array.isArray(data) ? data.map(normalizeProject) : []);
+    } catch (error) {
+      console.error("Failed to load feedback:", error);
+      alert(error.message || "Could not load feedback.");
+    }
+  };
+
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (!currentUser || currentUser.role !== "student") {
+    const currentUser = JSON.parse(localStorage.getItem("user"));
+
+    if (!currentUser || currentUser.role !== "STUDENT") {
+      localStorage.removeItem("user");
       navigate("/");
       return;
     }
 
-    const allProjects = JSON.parse(localStorage.getItem("projects") || "[]");
-    const myFeedbacks = allProjects.filter(
-      (p) => p.studentEmail === currentUser.email
-    );
-    setFeedbackList(myFeedbacks);
+    setStudentName(getDisplayName(currentUser));
+    loadFeedback(currentUser.email);
   }, [navigate]);
 
   const handleLogout = () => {
+    localStorage.removeItem("user");
     localStorage.removeItem("currentUser");
     navigate("/");
   };
 
-  
-  const handleBackToHome = () => {
-    navigate("/student"); // student home route
-  };
-
- 
   const getProgress = (marks) => {
     if (marks === null || marks === undefined) return 20;
     if (marks >= 90) return 100;
@@ -42,29 +66,27 @@ export default function FeedbackPage() {
   };
 
   return (
-   
-    <div id="feedback-layout" className="student-layout feedback-page">
-      {/* Sidebar */}
+    <div className="student-layout">
       <aside className="sidebar">
-        <h2 className="sidebar-title">📘 Menu</h2>
-        <nav>
-          <button onClick={() => navigate("/student")}>🏠 Home</button>
-          <button onClick={() => navigate("/feedback")}>🗒️ Feedback</button>
-          <button className="logout" onClick={handleLogout}>
-            🚪 Logout
+        <h2 className="sidebar-title">Menu</h2>
+        <nav className="sidebar-nav">
+          <button className="nav-item" onClick={() => navigate("/student")}>
+            Home
+          </button>
+          <button className="nav-item active" onClick={() => navigate("/feedback")}>
+            Feedback
+          </button>
+          <button className="nav-item logout" onClick={handleLogout}>
+            Logout
           </button>
         </nav>
       </aside>
 
-      {/* Main Feedback Section */}
       <main className="content">
-        {/* 🔙 Back Button */}
-        <button className="back-btn" onClick={handleBackToHome}>
-          ⬅ Back to Home
-        </button>
-
-        <h2>📊 Feedback & Progress Tracker</h2>
-        <p>View your project evaluations, remarks, and performance progress.</p>
+        <div className="content-header">
+          <h2>Feedback for {studentName}</h2>
+          <p>View remarks, marks, and progress for your submitted projects.</p>
+        </div>
 
         {feedbackList.length === 0 ? (
           <div className="card">
@@ -72,38 +94,40 @@ export default function FeedbackPage() {
           </div>
         ) : (
           feedbackList.map((item, index) => (
-            <div key={index} className="card">
-              <h3>📁 {item.title}</h3>
-              <p className="desc">{item.description}</p>
+            <div key={item.id || index} className="card">
+              <h3>{item.title}</h3>
+              <p className="feedback-desc">{item.description}</p>
 
-              <p>
-                <b>👩‍🏫 Madam:</b> {item.assignedAdmin}
-              </p>
-              <p>
-                <b>📌 Status:</b>{" "}
-                <span className={`badge ${item.status}`}>{item.status}</span>
-              </p>
-
-              <p>
-                <b>💬 Remarks:</b>{" "}
-                {item.feedback ? item.feedback : "Awaiting feedback..."}
-              </p>
-
-              <p>
-                <b>🌟 Marks:</b>{" "}
-                {item.marks !== null ? `${item.marks}/100` : "Not yet given"}
-              </p>
-
-              {/* 📈 Progress Bar */}
-              <div className="progress-bar">
-                <div
-                  className="progress"
-                  style={{ width: `${getProgress(item.marks)}%` }}
-                ></div>
+              <div className="feedback-meta">
+                <p>
+                  <b>Assigned Admin:</b> {item.assignedAdmin}
+                </p>
+                <p>
+                  <b>Status:</b> <span className={`badge ${item.status}`}>{item.status}</span>
+                </p>
+                <p>
+                  <b>Marks:</b>{" "}
+                  {item.marks !== null ? `${item.marks}/100` : "Not yet given"}
+                </p>
               </div>
-              <p className="progress-label">
-                Progress: {getProgress(item.marks)}%
-              </p>
+
+              <div className="feedback-panel">
+                <strong>Remarks</strong>
+                <p>{item.feedback ? item.feedback : "Awaiting feedback..."}</p>
+              </div>
+
+              <div className="progress-block">
+                <div className="progress-header">
+                  <span>Progress</span>
+                  <span>{getProgress(item.marks)}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${getProgress(item.marks)}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
           ))
         )}

@@ -1,47 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// ❌ axios removed – no backend now
 import "./style.css";
 import prot from "./prot.png";
+import { loginUser, signupUser } from "../api";
+
+const initialSignupState = {
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "",
+};
 
 export default function AuthPage() {
-  const [view, setView] = useState("home"); // home | login | signup
   const navigate = useNavigate();
-
-  // 🕒 Session duration: 30 minutes
-  const SESSION_DURATION = 30 * 60 * 1000; // 30 * 60 * 1000 ms
-
-  // ===== Signup Fields =====
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("student");
-
-  // ===== Login Fields =====
+  const [view, setView] = useState("home");
+  const [signupForm, setSignupForm] = useState(initialSignupState);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-
-  // ===== Captcha Fields (custom) =====
   const [captcha, setCaptcha] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Check that email ends with @gmail.com
-  const isValidGmail = (value) => {
-    return value.toLowerCase().endsWith("@gmail.com");
-  };
+  const isValidGmail = (value) => value.toLowerCase().endsWith("@gmail.com");
 
-  // 📌 Generate simple captcha text
   const generateCaptcha = () => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let result = "";
-    for (let i = 0; i < 6; i++) {
+    for (let index = 0; index < 6; index += 1) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setCaptcha(result);
   };
 
-  // When login view opens, generate captcha
+  const resetLoginForm = () => {
+    setLoginEmail("");
+    setLoginPassword("");
+    setCaptchaInput("");
+  };
+
   useEffect(() => {
     if (view === "login") {
       generateCaptcha();
@@ -49,256 +46,275 @@ export default function AuthPage() {
     }
   }, [view]);
 
-  // ==================================================
-  // 🔹 REGISTER FUNCTION (Saves to LOCAL STORAGE)
-  // ==================================================
-  const handleRegister = () => {
-    if (!fullName || !email || !password || !confirmPassword) {
-      alert("⚠ Please fill all fields!");
+  const switchView = (nextView) => {
+    setView(nextView);
+    if (nextView === "signup") {
+      setSignupForm(initialSignupState);
+    }
+    if (nextView === "login") {
+      resetLoginForm();
+    }
+  };
+
+  const handleSignupChange = (field, value) => {
+    setSignupForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleRegister = async () => {
+    const { fullName, email, password, confirmPassword, role } = signupForm;
+
+    if (!fullName || !email || !password || !confirmPassword || !role) {
+      alert("Please fill all fields.");
       return;
     }
 
-    // Email must be a Gmail address
     if (!isValidGmail(email)) {
-      alert("❌ Invalid email. Please use an email ending with @gmail.com");
+      alert("Please use a valid Gmail address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("⚠ Passwords do not match!");
+      alert("Passwords do not match.");
       return;
     }
 
-    // 🔹 Get existing users from localStorage
-    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
+    setIsSubmitting(true);
 
-    // 🔹 Check if email already exists
-    const userExists = existingUsers.some((u) => u.email === email);
-    if (userExists) {
-      alert("⚠ User with this email already exists!");
-      return;
+    try {
+      await signupUser({
+        name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role: role.toUpperCase(),
+      });
+
+      alert("Registration successful. Please log in.");
+      setSignupForm(initialSignupState);
+      switchView("login");
+    } catch (error) {
+      console.error("Signup Error:", error);
+      alert(error.message || "Signup failed.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // 🔹 Create new user object
-    const newUser = {
-      fullName,
-      email,
-      password,
-      role,
-    };
-
-    // 🔹 Save back to localStorage
-    const updatedUsers = [...existingUsers, newUser];
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-    alert("✅ Registration successful! You can now log in.");
-
-    // Reset fields
-    setFullName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setRole("student");
-
-    setView("login");
   };
 
-  // ==================================================
-  // 🔹 LOGIN FUNCTION (Verifies from LOCAL STORAGE)
-  // ==================================================
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
-      alert("⚠ Please fill all fields!");
+      alert("Please fill all fields.");
       return;
     }
 
-    // Email must be a Gmail address
-    if (!isValidGmail(loginEmail)) {
-      alert("❌ Invalid email. Please use an email ending with @gmail.com");
-      return;
-    }
-
-    // ✅ Check captcha before login
-    if (!captchaInput) {
-      alert("⚠ Please enter the captcha!");
-      return;
-    }
-
-    if (captchaInput.trim().toUpperCase() !== captcha) {
-      alert("❌ Captcha does not match! Try again.");
-      setCaptchaInput("");
+    if (!captchaInput || captchaInput.toUpperCase() !== captcha) {
+      alert("Captcha does not match.");
       generateCaptcha();
+      setCaptchaInput("");
       return;
     }
 
-    // 🔹 Read users from localStorage
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    setIsSubmitting(true);
 
-    const foundUser = users.find(
-      (u) => u.email === loginEmail && u.password === loginPassword
-    );
+    try {
+      const res = await loginUser({
+        email: loginEmail.trim().toLowerCase(),
+        password: loginPassword,
+      });
 
-    if (!foundUser) {
-      alert("❌ Invalid email or password!");
-      return;
+      const user = res.user || (Array.isArray(res) ? res[0] : res);
+
+      if (!user || !user.email) {
+        alert("Invalid email or password.");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      const normalizedRole = user.role?.toLowerCase();
+      if (normalizedRole === "admin") {
+        navigate("/admin");
+      } else if (normalizedRole === "student") {
+        navigate("/student");
+      } else {
+        alert(`Unknown role: ${user.role}`);
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      alert(error.message || "Login failed.");
+      generateCaptcha();
+      setCaptchaInput("");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Save logged-in user
-    localStorage.setItem("currentUser", JSON.stringify(foundUser));
-
-    // 🕒 Save session expiry time
-    const expiryTime = Date.now() + SESSION_DURATION;
-    localStorage.setItem("sessionExpiry", expiryTime.toString());
-
-    alert("✅ Login successful!");
-
-    if (foundUser.role === "admin") navigate("/admin");
-    else navigate("/student");
   };
 
   return (
-    <div className="auth-page">
-      {/* =============================== */}
-      {/* 🏠 HOME SCREEN */}
-      {/* =============================== */}
+    <div className={`auth-shell auth-shell--${view}`}>
       {view === "home" && (
-        <div className="splash-container">
-          <h1 className="splash-title">STUDENT PORTFOLIOS</h1>
-          <div className="logo-container">
-            <img src={prot} alt="Student Portfolios Logo" className="logo-img" />
+        <section className="landing-panel">
+          <div className="landing-copy">
+            <span className="landing-kicker">Project Review Portal</span>
+            <h1>Manage projects, reviews, and student progress in one place.</h1>
+            <p>
+              Students can upload submissions, admins can review them, and everyone
+              gets a cleaner dashboard experience from login to feedback.
+            </p>
+
+            <div className="landing-actions">
+              <button className="auth-primary-btn" onClick={() => switchView("login")}>
+                Login
+              </button>
+              <button className="auth-secondary-btn" onClick={() => switchView("signup")}>
+                Create Account
+              </button>
+            </div>
           </div>
-          <div className="button-group">
-            <button className="btn-outline" onClick={() => setView("login")}>
-              Login
-            </button>
-            <button className="btn-outline" onClick={() => setView("signup")}>
-              Sign Up
-            </button>
+
+          <div className="landing-visual">
+            <div className="landing-visual-frame">
+              <img src={prot} alt="Project portal preview" className="landing-image" />
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* =============================== */}
-      {/* 🔑 LOGIN FORM */}
-      {/* =============================== */}
-      {view === "login" && (
-        <div className="auth-box">
-          <h2>Login</h2>
-          <label>Email</label>
-          <input
-            type="text"
-            placeholder="Enter your email"
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-          />
-
-          <label>Password</label>
-          <input
-            type="password"
-            placeholder="Enter password"
-            value={loginPassword}
-            onChange={(e) => setLoginPassword(e.target.value)}
-          />
-
-          {/* 🔐 Simple Captcha */}
-          <label>Captcha</label>
-          <div className="captcha-box">
-            <span className="captcha-text">{captcha}</span>
-            <button
-              type="button"
-              className="captcha-refresh"
-              onClick={generateCaptcha}
-            >
-              ↻
+      {view !== "home" && (
+        <section className="auth-panel-wrap">
+          <div className="auth-panel">
+            <button className="auth-back-link" onClick={() => switchView("home")}>
+              Back
             </button>
+
+            <div className="auth-panel-header">
+              <span className="auth-badge">{view === "login" ? "Welcome back" : "Join now"}</span>
+              <h2>{view === "login" ? "Login to your account" : "Create your account"}</h2>
+              <p>
+                {view === "login"
+                  ? "Use your registered email and password to continue."
+                  : "Sign up as a student or admin to start using the portal."}
+              </p>
+            </div>
+
+            {view === "login" ? (
+              <div className="auth-form">
+                <label>Email</label>
+                <input
+                  value={loginEmail}
+                  placeholder="Enter your Gmail address"
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                />
+
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  placeholder="Enter your password"
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
+
+                <div className="captcha-box">
+                  <div className="captcha-display">
+                    <span className="captcha-label">Captcha</span>
+                    <strong>{captcha}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="captcha-refresh"
+                    onClick={generateCaptcha}
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                <label>Enter Captcha</label>
+                <input
+                  value={captchaInput}
+                  placeholder="Type the captcha shown above"
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                />
+
+                <button
+                  className="auth-primary-btn auth-primary-btn--full"
+                  onClick={handleLogin}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Logging in..." : "Login"}
+                </button>
+
+                <p className="auth-switch-text">
+                  Do not have an account?
+                  <button className="auth-inline-link" onClick={() => switchView("signup")}>
+                    Sign up
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <div className="auth-form">
+                <label>Full Name</label>
+                <input
+                  value={signupForm.fullName}
+                  placeholder="Enter your full name"
+                  onChange={(e) => handleSignupChange("fullName", e.target.value)}
+                />
+
+                <label>Email</label>
+                <input
+                  value={signupForm.email}
+                  placeholder="Enter your Gmail address"
+                  onChange={(e) => handleSignupChange("email", e.target.value)}
+                />
+
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={signupForm.password}
+                  placeholder="Create a password"
+                  onChange={(e) => handleSignupChange("password", e.target.value)}
+                />
+
+                <label>Confirm Password</label>
+                <input
+                  type="password"
+                  value={signupForm.confirmPassword}
+                  placeholder="Re-enter your password"
+                  onChange={(e) => handleSignupChange("confirmPassword", e.target.value)}
+                />
+
+                <label>Role</label>
+                <select
+                  value={signupForm.role}
+                  onChange={(e) => handleSignupChange("role", e.target.value)}
+                >
+                  <option value="">Select your role</option>
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
+
+                <button
+                  className="auth-primary-btn auth-primary-btn--full"
+                  onClick={handleRegister}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating account..." : "Create Account"}
+                </button>
+
+                <p className="auth-switch-text">
+                  Already have an account?
+                  <button className="auth-inline-link" onClick={() => switchView("login")}>
+                    Login
+                  </button>
+                </p>
+              </div>
+            )}
           </div>
-
-          <input
-            type="text"
-            placeholder="Enter the text shown above"
-            value={captchaInput}
-            onChange={(e) => setCaptchaInput(e.target.value)}
-          />
-
-          <button className="auth-btn" onClick={handleLogin}>
-            Login
-          </button>
-
-          <p className="auth-switch">
-            New user?{" "}
-            <a href="#" onClick={() => setView("signup")}>
-              Sign Up
-            </a>
-          </p>
-          <p>
-            <a href="#" onClick={() => setView("home")}>
-              ⬅ Back
-            </a>
-          </p>
-        </div>
-      )}
-
-      {/* =============================== */}
-      {/* 🧾 SIGNUP FORM */}
-      {/* =============================== */}
-      {view === "signup" && (
-        <div className="auth-box">
-          <h2>Sign Up</h2>
-
-          <label>Full Name</label>
-          <input
-            type="text"
-            placeholder="Your name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="example@gmail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <label>Create Password</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-
-          <label>Select Role</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-
-          <button className="auth-btn" onClick={handleRegister}>
-            Register
-          </button>
-
-          <p className="auth-switch">
-            Already have an account?{" "}
-            <a href="#" onClick={() => setView("login")}>
-              Login
-            </a>
-          </p>
-          <p>
-            <a href="#" onClick={() => setView("home")}>
-              ⬅ Back
-            </a>
-          </p>
-        </div>
+        </section>
       )}
     </div>
   );
