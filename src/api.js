@@ -1,4 +1,5 @@
-const BASE_URL = "https://backend-production-0919.up.railway.app/api";
+const BASE_URL = "https://backend-production-0cbf.up.railway.app/api";
+
 const API_ORIGIN = BASE_URL.replace(/\/api$/, "");
 
 export const resolveAssetUrl = (url) => {
