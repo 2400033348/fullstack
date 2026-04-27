@@ -36,6 +36,21 @@ export default function StudentDashboard() {
     message: "",
   });
 
+  const totalProjects = myProjects.length;
+  const approvedProjects = myProjects.filter((project) => project.status === "approved").length;
+  const pendingProjects = myProjects.filter((project) => project.status === "pending").length;
+  const averageMarks = myProjects
+    .filter((project) => project.marks !== null)
+    .reduce(
+      (summary, project) => ({
+        total: summary.total + project.marks,
+        count: summary.count + 1,
+      }),
+      { total: 0, count: 0 }
+    );
+  const averageScore =
+    averageMarks.count > 0 ? Math.round(averageMarks.total / averageMarks.count) : "N/A";
+
   const getDisplayName = (user) => {
     if (!user) return "Student";
     if (user.name && user.name.trim() !== "") return user.name;
@@ -181,143 +196,191 @@ export default function StudentDashboard() {
 
       <main className="content">
         <div className="content-header">
-          <h2>Welcome {studentName}</h2>
-          <p>Upload your project and track feedback from your admin.</p>
+          <div>
+            <span className="eyebrow">Student workspace</span>
+            <h2>Welcome {studentName}</h2>
+            <p>Upload submissions, follow review progress, and keep your project files current.</p>
+          </div>
         </div>
 
-        <div className="card">
-          <h3>Upload Project</h3>
-
-          <div className="form-group">
-            <label>Project Title</label>
-            <input
-              type="text"
-              value={projectTitle}
-              placeholder="Enter project title"
-              onChange={(e) => setProjectTitle(e.target.value)}
-            />
+        <section className="overview-grid">
+          <div className="metric-card">
+            <span>Total projects</span>
+            <strong>{totalProjects}</strong>
           </div>
-
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={projectDesc}
-              placeholder="Enter project description"
-              onChange={(e) => setProjectDesc(e.target.value)}
-            />
+          <div className="metric-card">
+            <span>Pending review</span>
+            <strong>{pendingProjects}</strong>
           </div>
+          <div className="metric-card">
+            <span>Approved</span>
+            <strong>{approvedProjects}</strong>
+          </div>
+          <div className="metric-card">
+            <span>Average marks</span>
+            <strong>{averageScore}</strong>
+          </div>
+        </section>
 
-          <div className="form-group">
-            <label>Upload File</label>
-            <div className="file-box upload-box">
+        <section className="workspace-grid">
+          <div className="card upload-card">
+            <div className="card-heading">
+              <div>
+                <span className="eyebrow">New submission</span>
+                <h3>Upload Project</h3>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Project Title</label>
               <input
-                className="file-input"
-                type="file"
-                onChange={(e) => setFile(e.target.files[0])}
+                type="text"
+                value={projectTitle}
+                placeholder="Enter project title"
+                onChange={(e) => setProjectTitle(e.target.value)}
               />
             </div>
-            <p className="file-name">{file ? file.name : "No file selected yet"}</p>
+
+            <div className="form-group">
+              <label>Description</label>
+              <textarea
+                value={projectDesc}
+                placeholder="Summarize the goal, stack, and what the admin should review"
+                onChange={(e) => setProjectDesc(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Upload File</label>
+              <div className="file-box upload-box">
+                <input
+                  className="file-input"
+                  type="file"
+                  onChange={(e) => setFile(e.target.files[0])}
+                />
+              </div>
+              <p className="file-name">{file ? file.name : "No file selected yet"}</p>
+            </div>
+
+            <div className="form-group">
+              <label>Select Admin</label>
+              <select
+                value={assignedAdmin}
+                onChange={(e) => setAssignedAdmin(e.target.value)}
+              >
+                <option value="">Select Admin</option>
+                {admins.map((admin, index) => (
+                  <option key={index} value={admin.email}>
+                    {admin.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button className="btn-submit" onClick={handleSubmit}>
+              Submit Project
+            </button>
           </div>
 
-          <div className="form-group">
-            <label>Select Admin</label>
-            <select
-              value={assignedAdmin}
-              onChange={(e) => setAssignedAdmin(e.target.value)}
-            >
-              <option value="">Select Admin</option>
-              {admins.map((admin, index) => (
-                <option key={index} value={admin.email}>
-                  {admin.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="card submissions-card">
+            <div className="card-heading">
+              <div>
+                <span className="eyebrow">Activity</span>
+                <h3>My Submissions</h3>
+              </div>
+              <span className="count-pill">{myProjects.length}</span>
+            </div>
 
-          <button className="btn-submit" onClick={handleSubmit}>
-            Submit Project
-          </button>
-        </div>
+            {myProjects.length === 0 ? (
+              <div className="empty-state">
+                <strong>No projects submitted yet.</strong>
+                <p>Your uploaded projects and review status will appear here.</p>
+              </div>
+            ) : (
+              <div className="submission-list">
+                {myProjects.map((project, index) => (
+                  <div key={project.id || index} className="submission">
+                    <h4>
+                      {project.title}{" "}
+                      <span className={`badge ${project.status}`}>{project.status}</span>
+                    </h4>
+                    <p>{project.description}</p>
+                    <div className="submission-meta">
+                      <span>
+                        <b>Admin</b>
+                        {project.assignedAdmin}
+                      </span>
+                      <span>
+                        <b>File</b>
+                        {project.fileName}
+                      </span>
+                    </div>
 
-        <div className="card">
-          <h3>My Submissions</h3>
-          {myProjects.length === 0 ? (
-            <p>No projects submitted yet.</p>
-          ) : (
-            myProjects.map((project, index) => (
-              <div key={project.id || index} className="submission">
-                <h4>
-                  {project.title}{" "}
-                  <span className={`badge ${project.status}`}>{project.status}</span>
-                </h4>
-                <p>{project.description}</p>
-                <p>
-                  <b>Assigned Admin:</b> {project.assignedAdmin}
-                </p>
+                    {project.marks !== null && (
+                      <div className="marks-box">
+                        <span>
+                          <b>Marks:</b> {project.marks}/100
+                        </span>
+                        <span
+                          className={`grade ${
+                            project.marks >= 90
+                              ? "excellent"
+                              : project.marks >= 75
+                                ? "good"
+                                : project.marks >= 50
+                                  ? "average"
+                                  : "poor"
+                          }`}
+                        >
+                          {project.marks >= 90
+                            ? "Excellent"
+                            : project.marks >= 75
+                              ? "Good"
+                              : project.marks >= 50
+                                ? "Average"
+                                : "Needs Improvement"}
+                        </span>
+                      </div>
+                    )}
 
-                {project.marks !== null && (
-                  <div className="marks-box">
-                    <span>
-                      <b>Marks:</b> {project.marks}/100
-                    </span>
-                    <span
-                      className={`grade ${
-                        project.marks >= 90
-                          ? "excellent"
-                          : project.marks >= 75
-                            ? "good"
-                            : project.marks >= 50
-                              ? "average"
-                              : "poor"
-                      }`}
-                    >
-                      {project.marks >= 90
-                        ? "Excellent"
-                        : project.marks >= 75
-                          ? "Good"
-                          : project.marks >= 50
-                            ? "Average"
-                            : "Needs Improvement"}
-                    </span>
-                  </div>
-                )}
-
-                <a
-                  href={project.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-outline"
-                >
-                  Open Project
-                </a>
-
-                <div className="file-section">
-                  <p className="section-title">Update File</p>
-
-                  <div className="file-box">
-                    <input id={`updateFile_${index}`} className="file-input" type="file" />
-                  </div>
-
-                  <div className="btn-row">
-                    <button
-                      onClick={() => handleUpdateFile(project.id, index)}
+                    <a
+                      href={project.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
                       className="btn-outline"
                     >
-                      Update
-                    </button>
+                      Open Project
+                    </a>
 
-                    <button
-                      onClick={() => handleDelete(project.id)}
-                      className="btn-danger"
-                    >
-                      Delete
-                    </button>
+                    <div className="file-section">
+                      <p className="section-title">Update File</p>
+
+                      <div className="file-box">
+                        <input id={`updateFile_${index}`} className="file-input" type="file" />
+                      </div>
+
+                      <div className="btn-row">
+                        <button
+                          onClick={() => handleUpdateFile(project.id, index)}
+                          className="btn-outline"
+                        >
+                          Update
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(project.id)}
+                          className="btn-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        </section>
 
         {modal.show && (
           <div className="modal-overlay">

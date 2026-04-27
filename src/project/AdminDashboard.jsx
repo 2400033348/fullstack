@@ -86,6 +86,10 @@ export default function AdminDashboard() {
     return matchSearch && matchStatus;
   });
 
+  const pendingCount = myProjects.filter((project) => project.status === "pending").length;
+  const approvedCount = myProjects.filter((project) => project.status === "approved").length;
+  const rejectedCount = myProjects.filter((project) => project.status === "rejected").length;
+
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
@@ -103,9 +107,29 @@ export default function AdminDashboard() {
 
       <main className="admin-content">
         <div className="admin-header">
+          <span className="admin-eyebrow">Admin review desk</span>
           <h2>Welcome {adminName}</h2>
-          <p>Review student submissions, assign marks, and send feedback.</p>
+          <p>Review student submissions, assign marks, and send feedback with a clear audit trail.</p>
         </div>
+
+        <section className="admin-stats">
+          <div className="admin-stat-card">
+            <span>Total assigned</span>
+            <strong>{myProjects.length}</strong>
+          </div>
+          <div className="admin-stat-card">
+            <span>Pending</span>
+            <strong>{pendingCount}</strong>
+          </div>
+          <div className="admin-stat-card">
+            <span>Approved</span>
+            <strong>{approvedCount}</strong>
+          </div>
+          <div className="admin-stat-card">
+            <span>Rejected</span>
+            <strong>{rejectedCount}</strong>
+          </div>
+        </section>
 
         <div className="admin-toolbar">
           <input
@@ -153,10 +177,13 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="admin-file-box">
+                    <div>
+                      <span>Submitted file</span>
+                      <div className="admin-file-name">{project.fileName}</div>
+                    </div>
                     <a href={project.fileUrl} target="_blank" rel="noreferrer">
                       Open Project
                     </a>
-                    <div className="admin-file-name">{project.fileName}</div>
                   </div>
 
                   <div className="admin-form-grid">
